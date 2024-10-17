@@ -34,6 +34,7 @@ void run(List<String> args) async {
   ...
 }
 ```
+
 Optionally, add a nickname for the module in the `config/generator.yaml` file. This nickname will be used as the name of the module in the code.
 
 ```yaml
@@ -71,25 +72,21 @@ $ dart run bin/main.dart --role maintenance --apply-migrations
 The full migration instructions can be found in the [migration guide](../database/migrations).
 
 ### Configure Authentication
-Serverpod's auth module comes with a default Authentication Configuration. To customize it, go to your main `server.dart` file, import the `serverpod_auth_server` module and set up the authentication configuration:
 
+Serverpod's auth module comes with a default Authentication Configuration. To customize it, go to your main `server.dart` file, import the `serverpod_auth_server` module, and set up the authentication configuration:
 
 ```dart
-import 'package:serverpod_auth_server/module.dart' as auth;  
-  
-void run(List<String> args) async {
+import 'package:serverpod_auth_server/module.dart' as auth;
 
-  auth.AuthConfig.set(auth.AuthConfig(  
+void run(List<String> args) async {
+  auth.AuthConfig.set(auth.AuthConfig(
     minPasswordLength: 12,
-  ));  
-    
-  // Start the Serverpod server.  
+  ));
+
+  // Start the Serverpod server.
   await pod.start();
 }
-
 ```
-
-
 
 |**Property**|Description|Default|
 |:-----|:---|:---:|
@@ -103,7 +100,7 @@ void run(List<String> args) async {
 | **enableUserImages** | True if user images are enabled. | true | 
 | **importUserImagesFromGoogleSignIn** | True if user images should be imported when signing in with Google. | true |
 | **userImageSize** | The size of user images. | 256 |
-| **userImageFormat** | The format used to store user images | jpg |
+| **userImageFormat** | The format used to store user images. | jpg |
 | **userImageQuality** | The quality setting for images if JPG format is used. | 70 |
 | **userImageGenerator** | Generator used to produce default user images. | - |
 | **userInfoCacheLifetime** | The duration which user infos are cached locally in the server. | 1min |
@@ -119,8 +116,30 @@ void run(List<String> args) async {
 | **maxPasswordLength** | The maximum length of passwords when signing up with email. | 128 |
 | **minPasswordLength** | The minimum length of passwords when signing up with email. | 8 |
 | **allowUnsecureRandom** | True if unsecure random number generation is allowed. If set to false, an error will be thrown if the platform does not support secure random number generation. | false |
+| **signOutOption** | Determines the default behavior when a user signs out using the deprecated `signOutUser` method. Users can either be signed out from all active devices (`SignOutOption.allDevices`) or just the current device (`SignOutOption.currentDevice`). This setting allows you to control the scope of the sign-out process based on your app's security requirements. | `SignOutOption.allDevices` |
 
+---
 
+### Managing User Sign-Out
+
+To provide more explicit control over user sign-outs, the authentication module includes two specific methods:
+
+- **`UserAuthentication.signOutAllDevices`**: Signs the user out from all active devices.
+- **`UserAuthentication.signOutCurrentDevice`**: Signs the user out only from the current device.
+
+These methods are recommended over the deprecated `signOutUser` method. When transitioning to these new methods, make sure all clients have been updated to avoid potential compatibility issues.
+
+Example usage:
+
+```dart
+// Sign the user out from all active devices
+await UserAuthentication.signOutAllDevices(session, userId: userId);
+
+// Sign the user out only from the current device
+await UserAuthentication.signOutCurrentDevice(session, userId: userId);
+```
+
+---
 
 ## Client setup
 
@@ -175,7 +194,9 @@ void main() async {
 
   // The session manager keeps track of the signed-in state of the user. You
   // can query it to see if the user is currently signed in and get information
-  // about the user.
+  // about
+
+ the user.
   sessionManager = SessionManager(
     caller: client.modules.auth,
   );
@@ -188,10 +209,10 @@ void main() async {
 The `SessionManager` has useful methods for viewing and monitoring the user's current state:
 
 - The `signedInUser` will return a `UserInfo` if the user is currently signed in (or `null` if the user isn't signed in).
-- Use the `addListener` method to get notified of changes to the user's signed in state.
-- Sign out a user by calling the `signOut` method.
+- Use the `addListener` method to get notified of changes to the user's signed-in state.
+- Sign out a user by calling the `signOutAllDevices` or `signOutCurrentDevice` methods, depending on your needs.
 
-For example it can be useful to subscribe to changes in the `SessionManager` and force a rerender of your app.
+For example, it can be useful to subscribe to changes in the `SessionManager` and force a rerender of your app.
 
 ```dart
 @override
